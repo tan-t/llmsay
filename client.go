@@ -57,7 +57,7 @@ func (c *OpenAIClient) StreamCompletion(model, prompt string) error {
 		if strings.HasPrefix(line, "data: ") {
 			data := strings.TrimPrefix(line, "data: ")
 			if data != "[DONE]" {
-				fmt.Print(extractContent(data))
+				fmt.Printf(strings.ReplaceAll(extractContent(data), "\\n", "\n"))
 			}
 		}
 	}
@@ -123,7 +123,7 @@ func (c *AnthropicClient) StreamCompletion(model, prompt string) error {
 		if strings.HasPrefix(line, "data: ") {
 			data := strings.TrimPrefix(line, "data: ")
 			if data != "[DONE]" {
-				fmt.Print(extractAnthropicContent(data))
+				fmt.Printf(strings.ReplaceAll(extractAnthropicContent(data), "\\n", "\n"))
 			}
 		}
 	}
