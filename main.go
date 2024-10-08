@@ -14,37 +14,41 @@ import (
 
 const (
 	GPT4    = "gpt-4"
-	GPT4O    = "gpt-4o"
+	GPT4O   = "gpt-4o"
 	GPT35   = "gpt-3.5-turbo"
 	CLAUDE2 = "claude-2"
 )
 
 var modelToProvider = map[string]string{
 	GPT4:    "openai",
-	GPT4O:    "openai",
+	GPT4O:   "openai",
 	GPT35:   "openai",
 	CLAUDE2: "anthropic",
 }
 
-
 var rootCmd = &cobra.Command{
 	Use:  "llmsay",
 	Long: "llmsay is a command line interface which allows you to access major llm models like GPT, Claude, Gemini",
-  Args: cobra.RangeArgs(0, 1),
+	Args: cobra.RangeArgs(0, 1),
 	// メイン処理
 	RunE: func(cmd *cobra.Command, args []string) error {
-    var prompt string
+		prompt := ""
 
 		if len(args) == 1 {
 			// 引数が1つ渡された場合
 			prompt = args[0]
-		} else if stat, _ := os.Stdin.Stat(); (stat.Mode() & os.ModeCharDevice) == 0 {
+		}
+
+		if stat, _ := os.Stdin.Stat(); (stat.Mode() & os.ModeCharDevice) == 0 {
 			// 標準入力からデータがある場合
 			scanner := bufio.NewScanner(os.Stdin)
 			if scanner.Scan() {
-				prompt = scanner.Text()
+				// だいたいの場合、プロンプトの「後ろ」に標準入力を入れることになるので
+				prompt = prompt + scanner.Text()
 			}
-		} else {
+		}
+
+		if prompt == "" {
 			// 引数も標準入力もない場合、プロンプトを表示
 			fmt.Print("Enter prompt: ")
 			reader := bufio.NewReader(os.Stdin)
@@ -52,13 +56,11 @@ var rootCmd = &cobra.Command{
 			prompt = strings.TrimSpace(prompt)
 		}
 
-
 		// フラグを取得
 		model, err := cmd.Flags().GetString("model")
 		if err != nil {
 			return err
 		}
-
 
 		path, err := cmd.Flags().GetString("file")
 		if err != nil {
@@ -71,18 +73,17 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-  	provider, ok := modelToProvider[model]
-  	if !ok {
-      return fmt.Errorf("Unknown model: %s", model)
-  	}
+		provider, ok := modelToProvider[model]
+		if !ok {
+			return fmt.Errorf("Unknown model: %s", model)
+		}
 
-    key := m[provider].Key;
-    client := getClient(provider, key)
-    err = client.StreamCompletion(model, prompt)
+		key := m[provider].Key
+		client := getClient(provider, key)
+		err = client.StreamCompletion(model, prompt)
 		return err
 	},
 }
-
 
 func getClient(provider, apiKey string) LLMClient {
 	switch provider {
@@ -101,7 +102,7 @@ type Config struct {
 }
 
 var config = &cobra.Command{
-	Use: "configure",
+	Use:  "configure",
 	Long: "Configure api key for each provider",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		p, err := cmd.Flags().GetString("provider")
